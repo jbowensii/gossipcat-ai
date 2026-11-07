@@ -2651,7 +2651,8 @@ export function createMcpServer(): McpServer {
       if (gossipAgents.length > 0) {
         agentSections.push(`\nAgents on relay (${gossipAgents.length}):\n${gossipAgents.join('\n')}`);
       } else {
-        agentSections.push('\nNo agents configured. Run gossip_setup or add .claude/agents/*.md files.');
+        // ponytail: the server reads process.cwd() in ~300 places, so a session move needs a restart.
+        agentSections.push(`\nNo agents configured in ${process.cwd()}. If this session moved folders after starting, run gossip_reload. Otherwise run gossip_setup or add .claude/agents/*.md files.`);
       }
 
       // Show runtime worker status if booted

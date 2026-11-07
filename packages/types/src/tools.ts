@@ -21,6 +21,7 @@ export interface ToolCall {
   id: string;       // Provider-supplied call ID
   name: string;
   arguments: Record<string, unknown>;
+  thoughtSignature?: string; // Gemini: echoed back on the functionCall part
 }
 
 /** Image content block for multimodal messages */

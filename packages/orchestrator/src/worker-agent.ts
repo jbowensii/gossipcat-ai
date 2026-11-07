@@ -296,6 +296,7 @@ export class WorkerAgent {
       let repeatCount = 0;    // consecutive identical tool calls
       let consecutiveErrors = 0; // consecutive turns where ALL tool calls return errors
       let findingsNudged = false;
+      let nudgedText = '';
       let providerRetryAttempted = false; // one retry per dispatch for provider-side placeholders
 
       for (let turn = 0; turn < this.maxToolTurns; turn++) {
@@ -380,6 +381,7 @@ export class WorkerAgent {
           && !text.includes('<agent_finding') && !/\b(?:no (?:issues|findings|defects|problems)|nothing (?:found|wrong))\b/i.test(text)
         ) {
           findingsNudged = true;
+          nudgedText = text;
           yield logAndYield(`turn ${turn} — no findings and no "nothing found", asking once more`);
           messages.push({ role: 'assistant', content: text });
           messages.push({ role: 'user', content: 'Your reply has no <agent_finding> tags. Give your final report now as <agent_finding> tags, or say "No findings" if you checked and found none.' });
@@ -389,7 +391,9 @@ export class WorkerAgent {
         if (!response.toolCalls?.length) {
           yield logAndYield(`turn ${turn} — NO tool calls, exiting. Text preview: "${(response.text || '').slice(0, 200)}"`);
           this.onTaskComplete?.({ agentId: this.agentId, taskId: taskId ?? '', toolCalls: toolCallCount, durationMs: Date.now() - startTime, memoryQueryCalled: this.memoryQueryCalled });
-          yield { type: TaskStreamEventType.FINAL_RESULT, payload: { result: response.text || '[No response from agent]', inputTokens: totalInputTokens, outputTokens: totalOutputTokens, memoryQueryCalled: this.memoryQueryCalled }, timestamp: Date.now() };
+          // The nudge can only add tags or "No findings"; keep the answer it interrupted.
+          const finalText = [nudgedText, response.text].filter(Boolean).join('\n\n');
+          yield { type: TaskStreamEventType.FINAL_RESULT, payload: { result: finalText || '[No response from agent]', inputTokens: totalInputTokens, outputTokens: totalOutputTokens, memoryQueryCalled: this.memoryQueryCalled }, timestamp: Date.now() };
           return;
         }
 

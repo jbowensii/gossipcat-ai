@@ -5,7 +5,7 @@
   "mcpName": "io.github.ataberk-xyz/gossipcat",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gossipcat-ai/gossipcat-ai.git"
+    "url": "https://github.com/jbowensii/gossipcat-ai.git"
   },
   "license": "MIT",
   "main": "dist-mcp/mcp-server.js",
