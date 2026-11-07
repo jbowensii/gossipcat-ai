@@ -142,6 +142,8 @@ export interface LLMResponse {
     argumentsParseError?: string;
     /** The raw arguments string that failed to parse (first 200 chars). Included in the error message fed back to the model. */
     rawArguments?: string;
+    /** Gemini thought_signature — must be echoed back on functionCall parts */
+    thoughtSignature?: string;
   }>;
   usage?: { inputTokens: number; outputTokens: number };
 }

@@ -1065,7 +1065,7 @@ export class GeminiProvider implements ILLMProvider {
     this.quota.onSuccess();
     clearAuthFailure(this.projectRoot, this.authSlot);
     const data = await res.json() as Record<string, unknown>;
-    const result = this.parseGeminiResponse(data);
+const result = this.parseGeminiResponse(data);
     if (process.env.GOSSIP_DEBUG) _log('Gemini', `→ text=${result.text?.length ?? 0}chars, toolCalls=${result.toolCalls?.length ?? 0}${result.toolCalls?.length ? ` [${result.toolCalls.map(tc => tc.name).join(', ')}]` : ''}, tokens=${result.usage?.inputTokens ?? '?'}/${result.usage?.outputTokens ?? '?'}`);
     return result;
   }
@@ -1085,7 +1085,13 @@ export class GeminiProvider implements ILLMProvider {
         parts.push({ text: m.content });
       }
       for (const tc of m.toolCalls) {
-        parts.push({ functionCall: { name: tc.name, args: tc.arguments } });
+        const fc: Record<string, unknown> = { name: tc.name, args: tc.arguments };
+        // Gemini expects thoughtSignature (camelCase) at the PART level, sibling to functionCall
+        const partObj: Record<string, unknown> = { functionCall: fc };
+        if (tc.thoughtSignature) {
+          partObj.thoughtSignature = tc.thoughtSignature;
+        }
+        parts.push(partObj);
       }
       return { role: 'model', parts };
     }
@@ -1144,11 +1150,15 @@ export class GeminiProvider implements ILLMProvider {
         textParts.push(part.text as string);
       }
       if (part.functionCall) {
+        const partAny = part as Record<string, unknown>;
         const fc = part.functionCall as { name: string; args: Record<string, unknown>; id?: string };
+        // Gemini returns thoughtSignature (camelCase) at the PART level, sibling to functionCall
+        const sig = (partAny.thoughtSignature as string | undefined) || (partAny.thought_signature as string | undefined);
         toolCalls.push({
           id: fc.id || randomUUID().slice(0, 12),
           name: fc.name,
           arguments: fc.args || {},
+          ...(sig ? { thoughtSignature: sig } : {}),
         });
       }
     }
